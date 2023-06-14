@@ -17,8 +17,7 @@ type FileSystem interface {
 
 	Access(ctx *Context, ino uint64, mask uint32) fuse.Status
 
-	Lookup(ctx *Context, parentIno uint64, name string, out *fuse.EntryOut) fuse.Status
-	Forget(ino uint64, nlookup uint64) fuse.Status
+	Lookup(ctx *Context, parentIno uint64, name string, out *fuse.Attr) fuse.Status
 
 	// Tree structure
 	Mknod(ctx *Context, parentIno uint64, name string, mode uint32, dev uint32) fuse.Status

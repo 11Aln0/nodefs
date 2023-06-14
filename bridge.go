@@ -42,7 +42,9 @@ func (b *rawBridge) logf(format string, args ...interface{}) {
 	}
 }
 
-func (b *rawBridge) setEntryOut(out *fuse.EntryOut) {
+func (b *rawBridge) setEntryOut(ino uint64, out *fuse.EntryOut) {
+	out.NodeId = ino
+	out.Generation = 1
 	b.setAttrInner(&out.Attr)
 }
 
@@ -109,19 +111,17 @@ func (b *rawBridge) Lookup(cancel <-chan struct{}, header *fuse.InHeader, name s
 }
 
 func (b *rawBridge) lookup(ctx *Context, ino uint64, name string, out *fuse.EntryOut) fuse.Status {
-	code := b.fs.Lookup(ctx, ino, name, out)
+	code := b.fs.Lookup(ctx, ino, name, &out.Attr)
 	if !code.Ok() {
 		return code
 	}
 
-	b.setEntryOut(out)
+	b.setEntryOut(ino, out)
 	b.setEntryOutTimeout(out)
 	return fuse.OK
 }
 
-func (b *rawBridge) Forget(nodeid, nlookup uint64) {
-	b.fs.Forget(nodeid, nlookup)
-}
+func (b *rawBridge) Forget(nodeid, nlookup uint64) {}
 
 func (b *rawBridge) GetAttr(cancel <-chan struct{}, input *fuse.GetAttrIn, out *fuse.AttrOut) fuse.Status {
 	ctx := newContext(cancel, input.Caller)
