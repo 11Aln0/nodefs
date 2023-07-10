@@ -336,7 +336,7 @@ func (b *rawBridge) Create(cancel <-chan struct{}, input *fuse.CreateIn, name st
 	if forceDIO {
 		out.OpenFlags |= fuse.FOPEN_DIRECT_IO
 	}
-	out.Fh = uint64(b.registerFile(input.Caller.Owner, input.NodeId, uFh, nil))
+	out.Fh = uint64(b.registerFile(input.Caller.Owner, uFh, nil))
 	return fuse.OK
 }
 
@@ -349,7 +349,7 @@ func (b *rawBridge) Open(cancel <-chan struct{}, input *fuse.OpenIn, out *fuse.O
 		return code
 	}
 
-	out.Fh = uint64(b.registerFile(input.Caller.Owner, input.NodeId, uFh, nil))
+	out.Fh = uint64(b.registerFile(input.Caller.Owner, uFh, nil))
 	if forceDIO {
 		out.OpenFlags |= fuse.FOPEN_DIRECT_IO
 	} else if keepCache {
@@ -442,7 +442,7 @@ func (b *rawBridge) SetLkw(cancel <-chan struct{}, input *fuse.LkIn) fuse.Status
 }
 
 func (b *rawBridge) OpenDir(cancel <-chan struct{}, input *fuse.OpenIn, out *fuse.OpenOut) fuse.Status {
-	out.Fh = uint64(b.registerFile(input.Caller.Owner, input.NodeId, 0, nil))
+	out.Fh = uint64(b.registerFile(input.Caller.Owner, 0, nil))
 	return fuse.OK
 }
 
@@ -556,4 +556,37 @@ func (b *rawBridge) StatFs(cancel <-chan struct{}, input *fuse.InHeader, out *fu
 	defer releaseContext(ctx)
 
 	return b.fs.StatFs(ctx, input.NodeId, out)
+}
+
+func (b *rawBridge) Dump() (data *DumpRawBridge, err error) {
+	files := make([]*DumpFileEntry, len(b.files))
+	for i, f := range b.files {
+		files[i] = &DumpFileEntry{
+			Opener: f.opener,
+			UFh:    f.uFh,
+			Stream: f.stream,
+		}
+	}
+
+	data = &DumpRawBridge{
+		Files:     files,
+		FreeFiles: b.freeFiles,
+	}
+
+	return data, nil
+}
+
+func (b *rawBridge) Restore(data *DumpRawBridge) error {
+	files := make([]*fileEntry, len(data.Files))
+	for i, v := range data.Files {
+		files[i] = &fileEntry{
+			opener: v.Opener,
+			uFh:    v.UFh,
+			stream: v.Stream,
+		}
+	}
+	b.files = files
+	b.freeFiles = data.FreeFiles
+
+	return nil
 }

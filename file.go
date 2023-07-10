@@ -2,13 +2,13 @@ package nodefs
 
 import (
 	"github.com/hanwen/go-fuse/v2/fuse"
+	"golang.org/x/sys/unix"
 	"log"
 	"sync"
 )
 
 type fileEntry struct {
 	opener fuse.Owner
-	ino    uint64
 
 	// file
 	uFh uint32
@@ -30,7 +30,7 @@ func (b *rawBridge) file(fh uint32, ctx *Context) *fileEntry {
 	}
 	return f
 }
-func (b *rawBridge) registerFile(opener fuse.Owner, ino uint64, uFh uint32, stream []fuse.DirEntry) (fh uint32) {
+func (b *rawBridge) registerFile(opener fuse.Owner, uFh uint32, stream []fuse.DirEntry) (fh uint32) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -45,7 +45,6 @@ func (b *rawBridge) registerFile(opener fuse.Owner, ino uint64, uFh uint32, stre
 
 	entry := b.files[fh]
 	entry.opener = opener
-	entry.ino = ino
 	entry.uFh = uFh
 	entry.stream = stream
 	return
@@ -58,7 +57,7 @@ func (b *rawBridge) unregisterFile(fh uint32) {
 	if fh == 0 {
 		return
 	}
-
+	unix.UnixRights()
 	b.files[fh] = &fileEntry{}
 	b.freeFiles = append(b.freeFiles, fh)
 	return
