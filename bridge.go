@@ -33,6 +33,9 @@ func NewNodeFS(fs FileSystem, options *Options) fuse.RawFileSystem {
 		//root:    newInode(1, true),
 	}
 
+	// Fh 0 means no file handle.
+	b.files = []*fileEntry{{}}
+
 	return b
 }
 
@@ -42,8 +45,8 @@ func (b *rawBridge) logf(format string, args ...interface{}) {
 	}
 }
 
-func (b *rawBridge) setEntryOut(ino uint64, out *fuse.EntryOut) {
-	out.NodeId = ino
+func (b *rawBridge) setEntryOut(out *fuse.EntryOut) {
+	out.NodeId = out.Ino
 	out.Generation = 1
 	b.setAttrInner(&out.Attr)
 }
@@ -116,7 +119,7 @@ func (b *rawBridge) lookup(ctx *Context, ino uint64, name string, out *fuse.Entr
 		return code
 	}
 
-	b.setEntryOut(ino, out)
+	b.setEntryOut(out)
 	b.setEntryOutTimeout(out)
 	return fuse.OK
 }

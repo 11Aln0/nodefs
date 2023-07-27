@@ -27,7 +27,7 @@ func (fs defaultFileSystem) Access(ctx *Context, ino uint64, mask uint32) fuse.S
 	return fuse.ENOSYS
 }
 
-func (fs defaultFileSystem) Lookup(ctx *Context, parentIno uint64, name string, out *fuse.EntryOut) fuse.Status {
+func (fs defaultFileSystem) Lookup(ctx *Context, parentIno uint64, name string, out *fuse.Attr) fuse.Status {
 	return fuse.ENOSYS
 }
 
